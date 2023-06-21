@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <title>To Do Project</title>
+    <style>
+        label
+        {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<body class="container">
+    <h1 class="row">To Do List : </h1>
+    <form class="row">
+        <div class="col-md-4">
+            <label>To Do Name: </label>
+            <input type="text" name="todoname" id="todoname" required/>
+        </div>
+        <div class="col-md-4">
+            <label>To Do Description: </label>
+            <input type="text" name="tododesc" id="tododesc" required/>
+        </div>
+        <div class="col-md-4">
+            <input class="btn btn-success" type="submit" value="Add To List" id="submit_btn"/>
+        </div>
+    </form>
+    <br>
+    <br>    
+    <div class="row" style="border: 1px; border-style:solid;">
+        <h3 class="col-md-12">To Do Remaining</h3>
+        <div class="row">
+            <div class=col-md-4><label>To Do Name</label></div>
+            <div class=col-md-4><label>Description</label></div>
+            <div class=col-md-4><label>Actions</label></div>             
+        </div>
+        <div id="remaining"></div>
+        <br>
+        <br>
+    </div>
+    <br>
+    <div class="row" style="border: 1px; border-style:solid;">
+        <h3 class="col-md-12">To Do Completed</h3>
+        <div class="row">
+            <div class=col-md-4><label>To Do Name</label></div>
+            <div class=col-md-4><label>Description</label></div>           
+        </div>
+        <div id="completed"></div>
+        <br>
+        <br>
+    </div>    
+    <script>
+        const baseUrl='https://crudcrud.com/api/023775dbf7684c4dab3eb2fcd837ace2/todo';
+        const submitBtn = document.getElementById('submit_btn');
+        submitBtn.addEventListener('click',addList);
+
+        function addList(event)
+        {
+            event.preventDefault();
+
+            const todoName= document.getElementById('todoname').value;
+            const todoDescription = document.getElementById('tododesc').value;
+
+            const addList = {
+                todoName:todoName,
+                todoDescription:todoDescription,
+                todoStatus:0,
+            };
+
+            axios.post(baseUrl,addList)
+                .then((response) =>{
+                    displayRemaining();
+                    displayCompleted();
+                    console.log(response);
+                })
+                .catch((err) => {
+                    console.log(err);
+                });
+
+                document.getElementById('todoname').value ='';
+                document.getElementById('tododesc').value ='';
+        }
+        function displayRemaining()
+        {
+            axios.get(baseUrl)
+                .then((response)=>{
+                    let output ="";
+                    const tasks = response.data;
+
+                    for(let i=0;i<tasks.length;i++)
+                    {
+                        const add = tasks[i];
+                        const key =add._id;
+                        if (add.todoStatus === 0)
+                        {
+                            output += `<div class="row">
+                            <div class="col-md-4">${add.todoName}</div>
+                            <div class="col-md-4">${add.todoDescription}</div>
+                            <div class="col-md-2">
+                                <button onclick="takeAction('${key}',1)">&#9989;</button>
+                            </div>
+                            <div class="col-md-2">
+                                <button onclick="takeAction('${key}',0)">&#10062;</button>
+                            </div>
+                        </div>`;
+                        }
+                    }
+
+                    document.getElementById("remaining").innerHTML = output;
+                })
+                .catch((err)=> {
+                    console.log(err);
+                });
+        }
+        function displayCompleted()
+        {
+            axios.get(baseUrl)
+                .then((response)=>{
+                    let output ="";
+                    const tasks = response.data;
+
+                    for(let i=0;i<tasks.length;i++)
+                    {
+                        const add = tasks[i];
+                        const key =add._id;
+                        if (add.todoStatus === 1) 
+                        {
+                            output += `<div class="row">
+                            <div class="col-md-4">${add.todoName}</div>
+                            <div class="col-md-4">${add.todoDescription}</div>
+                        </div>`;
+                        }
+                    }
+
+                    document.getElementById("completed").innerHTML = output;
+                })
+                .catch((err)=> {
+                    console.log(err);
+                });
+        }
+        function takeAction(tid,ta)
+        {
+            if (ta === 1) 
+            {
+                axios.get(`${baseUrl}/${tid}`)
+                .then((response) => {
+                        const task = response.data; 
+                    
+                    const updatedStatus = {
+                        todoName:task.todoName,
+                        todoDescription:task.todoDescription,
+                        todoStatus: 1,
+                    };
+
+                        axios.put(baseUrl+'/'+tid,updatedStatus)
+                        .then((response) => {
+                            displayRemaining();
+                            displayCompleted();
+                            console.log(response);
+                        })
+                        .catch((err) => {
+                            console.log(err);
+                        });
+                    })
+                    .catch((err) => {
+                        console.log(err);
+                    });
+
+            } else if (ta === 0) {
+                axios.delete(`${baseUrl}/${tid}`)
+                .then((response) => {
+                    displayRemaining();
+                    displayCompleted();
+                    console.log(response);
+                })
+                .catch((err) => {
+                    console.log(err);
+                });
+            }
+
+        }
+        displayRemaining();
+        displayCompleted();
+    </script>
+</body>
+</html>
